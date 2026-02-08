@@ -63,17 +63,10 @@ async def generate_episode(episode_id: ObjectId) -> None:
         # Step 4: Stitch audio
         await update_status(episode_id, "stitching")
         filename = str(episode_id)
-        file_path, duration, timestamps = await asyncio.to_thread(
+        cloud_url, duration, timestamps = await asyncio.to_thread(
             stitch_audio, segments, filename
         )
-
-        # Step 4b: Upload to GCS if configured, otherwise fall back to local path
-        if settings.gcs_bucket_name:
-            with open(file_path, "rb") as f:
-                audio_data = f.read()
-            audio_url = await asyncio.to_thread(upload_audio, audio_data, filename)
-        else:
-            audio_url = f"/static/audio/{filename}.mp3"
+        audio_url = cloud_url
 
         # Step 5: Resolve citations
         citation_indices = []  # track which script line each task corresponds to

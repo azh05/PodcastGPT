@@ -1,19 +1,55 @@
-import { Link } from 'wouter'
+import { Link } from "wouter";
 
 const STATUS_STYLES = {
-  completed: { bg: 'bg-[rgba(30,215,96,0.15)]', text: 'text-premium-green', label: 'Ready' },
-  pending: { bg: 'bg-[rgba(255,200,87,0.15)]', text: 'text-accent-secondary', label: 'Queued' },
-  researching: { bg: 'bg-[rgba(96,165,250,0.15)]', text: 'text-blue-400', label: 'Researching...' },
-  scriptwriting: { bg: 'bg-[rgba(192,132,252,0.15)]', text: 'text-purple-400', label: 'Writing script...' },
-  generating_audio: { bg: 'bg-[rgba(251,146,60,0.15)]', text: 'text-orange-400', label: 'Generating audio...' },
-  stitching: { bg: 'bg-[rgba(251,146,60,0.15)]', text: 'text-orange-400', label: 'Stitching audio...' },
-  failed: { bg: 'bg-[rgba(239,68,68,0.15)]', text: 'text-red-400', label: 'Failed' },
-}
+  completed: {
+    bg: "bg-[rgba(30,215,96,0.15)]",
+    text: "text-premium-green",
+    label: "Ready",
+  },
+  pending: {
+    bg: "bg-[rgba(255,200,87,0.15)]",
+    text: "text-accent-secondary",
+    label: "Queued",
+  },
+  researching: {
+    bg: "bg-[rgba(96,165,250,0.15)]",
+    text: "text-blue-400",
+    label: "Researching...",
+  },
+  scriptwriting: {
+    bg: "bg-[rgba(192,132,252,0.15)]",
+    text: "text-purple-400",
+    label: "Writing script...",
+  },
+  generating_audio: {
+    bg: "bg-[rgba(251,146,60,0.15)]",
+    text: "text-orange-400",
+    label: "Generating audio...",
+  },
+  stitching: {
+    bg: "bg-[rgba(251,146,60,0.15)]",
+    text: "text-orange-400",
+    label: "Stitching audio...",
+  },
+  failed: {
+    bg: "bg-[rgba(239,68,68,0.15)]",
+    text: "text-red-400",
+    label: "Failed",
+  },
+};
 
-export default function PodcastCard({ id, title, status, coverImageUrl, onPlay }) {
-  const playable = status === 'completed'
-  const inProgress = status && status !== 'completed' && status !== 'failed'
-  const style = STATUS_STYLES[status] || STATUS_STYLES.pending
+export default function PodcastCard({
+  id,
+  title,
+  status,
+  coverImageUrl,
+  onPlay,
+  onRegenerate,
+}) {
+  const playable = status === "completed";
+  const inProgress = status && status !== "completed" && status !== "failed";
+  const failed = status === "failed";
+  const style = STATUS_STYLES[status] || STATUS_STYLES.pending;
 
   return (
     <Link href={`/episode/${id}`} className="no-underline text-inherit">
@@ -25,22 +61,44 @@ export default function PodcastCard({ id, title, status, coverImageUrl, onPlay }
               src={coverImageUrl}
               alt={title}
               className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => { e.target.style.display = 'none' }}
+              loading="lazy"
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
             />
           )}
           {/* Animated ring for in-progress */}
           {inProgress && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <svg className="w-12 h-12 animate-spin text-accent-primary opacity-60" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="w-12 h-12 animate-spin text-accent-primary opacity-60"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
             </div>
           )}
           {/* Play button */}
           {playable && (
             <button
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onPlay?.(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onPlay?.();
+              }}
               className="absolute bottom-2 right-2 w-12 h-12 bg-accent-primary rounded-full flex items-center justify-center opacity-0 translate-y-2.5 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:translate-y-0 shadow-[0_8px_16px_rgba(255,107,53,0.4)] z-10 border-none cursor-pointer"
             >
               <svg className="w-5 h-5 fill-white ml-0.5" viewBox="0 0 24 24">
@@ -48,12 +106,42 @@ export default function PodcastCard({ id, title, status, coverImageUrl, onPlay }
               </svg>
             </button>
           )}
+          {/* Regenerate button for failed episodes */}
+          {failed && onRegenerate && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onRegenerate();
+              }}
+              className="absolute bottom-2 right-2 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center opacity-0 translate-y-2.5 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:translate-y-0 shadow-[0_8px_16px_rgba(239,68,68,0.4)] z-10 border-none cursor-pointer hover:bg-red-400"
+              title="Regenerate"
+            >
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 4v5h4.5M20 20v-5h-4.5M4.5 9A8 8 0 0119.5 15M19.5 15A8 8 0 014.5 9"
+                />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Info */}
-        <h3 className="text-base font-bold mb-1 text-text-primary line-clamp-2 relative z-2">{title}</h3>
+        <h3 className="text-base font-bold mb-1 text-text-primary line-clamp-2 relative z-2">
+          {title}
+        </h3>
         {status && (
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${style.bg} ${style.text} rounded text-[0.7rem] font-bold mt-2 relative z-2`}>
+          <span
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${style.bg} ${style.text} rounded text-[0.7rem] font-bold mt-2 relative z-2`}
+          >
             {inProgress && (
               <span className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />
             )}
@@ -62,5 +150,5 @@ export default function PodcastCard({ id, title, status, coverImageUrl, onPlay }
         )}
       </div>
     </Link>
-  )
+  );
 }

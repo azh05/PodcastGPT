@@ -37,7 +37,7 @@ export default function HomePage({ searchQuery, onPlay }) {
     onPlay({
       id: episode.id,
       title: episode.topic,
-      audioUrl: `/api${episode.audio_url}`,
+      audioUrl: episode.audio_url,
     });
   };
 

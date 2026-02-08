@@ -1,9 +1,8 @@
 import io
-import os
 
 from pydub import AudioSegment
 
-from app.config import settings
+from app.storage import upload_audio
 
 SILENCE_SAME_SPEAKER_MS = 400
 SILENCE_SPEAKER_CHANGE_MS = 600
@@ -17,8 +16,9 @@ def stitch_audio(segments: list[dict], output_filename: str) -> tuple[str, float
         output_filename: filename (without extension) for the output
 
     Returns:
-        (file_path, duration_seconds, timestamps)
-        where timestamps is a list of {"index": int, "start_seconds": float}
+        (cloud_url, duration_seconds, timestamps)
+        where cloud_url is the public HTTPS URL of the uploaded audio file
+        and timestamps is a list of {"index": int, "start_seconds": float}
     """
     combined = AudioSegment.empty()
     prev_speaker = None
@@ -37,9 +37,13 @@ def stitch_audio(segments: list[dict], output_filename: str) -> tuple[str, float
         combined += chunk
         prev_speaker = seg["speaker"]
 
-    os.makedirs(settings.audio_dir, exist_ok=True)
-    file_path = os.path.join(settings.audio_dir, f"{output_filename}.mp3")
-    combined.export(file_path, format="mp3", bitrate="128k")
+    # Export to in-memory buffer
+    buffer = io.BytesIO()
+    combined.export(buffer, format="mp3", bitrate="128k")
+    audio_data = buffer.getvalue()
+
+    # Upload to cloud storage
+    cloud_url = upload_audio(audio_data, output_filename)
 
     duration_seconds = len(combined) / 1000.0
-    return file_path, duration_seconds, timestamps
+    return cloud_url, duration_seconds, timestamps

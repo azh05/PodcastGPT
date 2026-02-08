@@ -48,8 +48,8 @@ async def generate_episode(episode_id: ObjectId) -> None:
         # Step 4: Stitch audio
         await update_status(episode_id, "stitching")
         filename = str(episode_id)
-        file_path, duration, timestamps = await asyncio.to_thread(stitch_audio, segments, filename)
-        audio_url = f"/static/audio/{filename}.mp3"
+        cloud_url, duration, timestamps = await asyncio.to_thread(stitch_audio, segments, filename)
+        audio_url = cloud_url
 
         # Step 5: Resolve citations
         citation_indices = []  # track which script line each task corresponds to

@@ -12,7 +12,11 @@ def _get_storage_client() -> storage.Client:
     """Get or create a GCS client singleton."""
     global _storage_client
     if _storage_client is None:
-        _storage_client = storage.Client()
+        # Extract project ID from bucket name if it follows the pattern "project-id.appspot.com"
+        project_id = (
+            settings.gcs_bucket_name.split(".")[0] if settings.gcs_bucket_name else None
+        )
+        _storage_client = storage.Client(project=project_id)
     return _storage_client
 
 
@@ -52,4 +56,6 @@ def upload_audio(audio_data: bytes, filename: str) -> str:
         # Return the public URL
         return blob.public_url
     except Exception as e:
-        raise Exception(f"Failed to upload audio to GCS bucket '{bucket_name}': {e}") from e
+        raise Exception(
+            f"Failed to upload audio to GCS bucket '{bucket_name}': {e}"
+        ) from e

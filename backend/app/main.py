@@ -5,7 +5,6 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 from app import db as database
 from app.db import close_db, connect_db
@@ -33,7 +32,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/health")

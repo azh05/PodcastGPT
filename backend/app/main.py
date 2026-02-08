@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app import db as database
@@ -26,6 +27,12 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PodcastGPT", version="0.1.0", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -74,9 +81,13 @@ async def get_episode(episode_id: str):
 async def list_episodes(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    search: str = Query(default=""),
 ):
+    query = {}
+    if search.strip():
+        query["topic"] = {"$regex": search.strip(), "$options": "i"}
     cursor = (
-        database.db["episodes"].find().sort("created_at", -1).skip(offset).limit(limit)
+        database.db["episodes"].find(query).sort("created_at", -1).skip(offset).limit(limit)
     )
     docs = await cursor.to_list(length=limit)
     return [doc_to_episode_list_item(doc) for doc in docs]

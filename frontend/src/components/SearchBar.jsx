@@ -1,4 +1,4 @@
-export default function SearchBar() {
+export default function SearchBar({ value, onChange }) {
   return (
     <div className="flex-1 max-w-[600px] relative">
       <svg
@@ -16,6 +16,8 @@ export default function SearchBar() {
       <input
         type="text"
         placeholder="What do you want to listen to?"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full py-[0.9rem] pr-[1.2rem] pl-12 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-full text-text-primary text-[0.95rem] transition-all duration-300 focus:outline-none focus:bg-[rgba(255,255,255,0.08)] focus:border-accent-primary"
       />
     </div>

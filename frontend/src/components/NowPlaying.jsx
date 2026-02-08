@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from "react";
 
 function formatTime(seconds) {
-  if (!seconds || !isFinite(seconds)) return '0:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
+  if (!seconds || !isFinite(seconds)) return "0:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 function CitationCard({ citation, isActive, onSeek }) {
@@ -13,8 +13,8 @@ function CitationCard({ citation, isActive, onSeek }) {
       onClick={() => onSeek(citation.timestamp_seconds)}
       className={`flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all duration-200 border cursor-pointer w-full shrink-0 ${
         isActive
-          ? 'bg-[rgba(255,107,53,0.15)] border-accent-primary shadow-[0_0_12px_rgba(255,107,53,0.2)]'
-          : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)]'
+          ? "bg-[rgba(255,107,53,0.15)] border-accent-primary shadow-[0_0_12px_rgba(255,107,53,0.2)]"
+          : "bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.15)]"
       }`}
     >
       {/* Thumbnail */}
@@ -23,7 +23,9 @@ function CitationCard({ citation, isActive, onSeek }) {
           src={citation.thumbnail_url}
           alt={citation.title}
           className="w-10 h-14 object-cover rounded-md shrink-0 bg-[rgba(255,255,255,0.05)]"
-          onError={(e) => { e.target.style.display = 'none' }}
+          onError={(e) => {
+            e.target.style.display = "none";
+          }}
         />
       ) : (
         <div className="w-10 h-14 rounded-md shrink-0 bg-[rgba(255,255,255,0.08)] flex items-center justify-center text-text-muted text-lg">
@@ -34,9 +36,13 @@ function CitationCard({ citation, isActive, onSeek }) {
       {/* Details */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-            isActive ? 'bg-accent-primary text-white' : 'bg-[rgba(255,255,255,0.1)] text-text-muted'
-          }`}>
+          <span
+            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+              isActive
+                ? "bg-accent-primary text-white"
+                : "bg-[rgba(255,255,255,0.1)] text-text-muted"
+            }`}
+          >
             {formatTime(citation.timestamp_seconds)}
           </span>
         </div>
@@ -57,8 +63,8 @@ function CitationCard({ citation, isActive, onSeek }) {
         </div>
         {citation.authors?.length > 0 && (
           <div className="text-[10px] text-text-muted truncate">
-            {citation.authors.slice(0, 2).join(', ')}
-            {citation.published_date ? ` · ${citation.published_date}` : ''}
+            {citation.authors.slice(0, 2).join(", ")}
+            {citation.published_date ? ` · ${citation.published_date}` : ""}
           </div>
         )}
       </div>
@@ -73,70 +79,88 @@ function CitationCard({ citation, isActive, onSeek }) {
           className="shrink-0 text-text-muted hover:text-accent-primary transition-colors"
           title="Open source"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </a>
       )}
     </button>
-  )
+  );
 }
 
 export default function NowPlaying({ episode }) {
-  const audioRef = useRef(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [showCitations, setShowCitations] = useState(false)
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showCitations, setShowCitations] = useState(false);
 
-  const citations = episode.citations || []
+  const citations = episode.citations || [];
   const sortedCitations = useMemo(
-    () => [...citations].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds),
-    [citations]
-  )
+    () =>
+      [...citations].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds),
+    [citations],
+  );
 
   // Find which citation is currently active based on playback time
   const activeCitationIndex = useMemo(() => {
     for (let i = sortedCitations.length - 1; i >= 0; i--) {
-      if (currentTime >= sortedCitations[i].timestamp_seconds) return i
+      if (currentTime >= sortedCitations[i].timestamp_seconds) return i;
     }
-    return -1
-  }, [currentTime, sortedCitations])
+    return -1;
+  }, [currentTime, sortedCitations]);
 
   // When a new episode is selected, load and play it
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.load()
-    audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
-  }, [episode.id])
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.load();
+    audio
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(() => setIsPlaying(false));
+  }, [episode.id]);
 
   const togglePlay = () => {
-    const audio = audioRef.current
-    if (!audio) return
+    const audio = audioRef.current;
+    if (!audio) return;
     if (isPlaying) {
-      audio.pause()
+      audio.pause();
     } else {
-      audio.play()
+      audio.play();
     }
-  }
+  };
 
   const handleSeek = (e) => {
-    const audio = audioRef.current
-    if (!audio || !duration) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    audio.currentTime = fraction * duration
-  }
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fraction = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width),
+    );
+    audio.currentTime = fraction * duration;
+  };
 
   const seekTo = (seconds) => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.currentTime = seconds
-    if (!isPlaying) audio.play()
-  }
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = seconds;
+    if (!isPlaying) audio.play();
+  };
 
-  const progress = duration ? (currentTime / duration) * 100 : 0
+  const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
     <>
@@ -147,7 +171,7 @@ export default function NowPlaying({ episode }) {
             <div className="bg-[rgba(20,20,25,0.95)] backdrop-blur-xl border border-[rgba(255,255,255,0.1)] rounded-t-2xl px-4 py-3 max-h-[280px] overflow-y-auto">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-text-secondary">
-                  📚 Sources & Citations ({sortedCitations.length})
+                  Sources & Citations ({sortedCitations.length})
                 </h3>
               </div>
               <div className="flex flex-col gap-2">
@@ -184,13 +208,17 @@ export default function NowPlaying({ episode }) {
               src={episode.coverImageUrl}
               alt={episode.title}
               className="w-14 h-14 rounded-lg shrink-0 object-cover"
-              onError={(e) => { e.target.style.display = 'none' }}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
             />
           ) : (
             <div className="w-14 h-14 bg-gradient-to-br from-[#2a2a35] to-[#3a3a45] rounded-lg shrink-0" />
           )}
           <div className="min-w-0">
-            <div className="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">{episode.title}</div>
+            <div className="font-semibold text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+              {episode.title}
+            </div>
           </div>
         </div>
 
@@ -212,7 +240,9 @@ export default function NowPlaying({ episode }) {
 
         {/* Progress */}
         <div className="flex-1 flex items-center gap-4">
-          <span className="text-xs text-text-muted min-w-[40px]">{formatTime(currentTime)}</span>
+          <span className="text-xs text-text-muted min-w-[40px]">
+            {formatTime(currentTime)}
+          </span>
           <div className="flex-1 relative">
             <div
               onClick={handleSeek}
@@ -223,18 +253,26 @@ export default function NowPlaying({ episode }) {
                 style={{ width: `${progress}%` }}
               />
               {/* Citation markers on the progress bar */}
-              {duration > 0 && sortedCitations.map((c, i) => (
-                <div
-                  key={`marker-${i}`}
-                  className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-yellow-400 opacity-80 hover:opacity-100 hover:scale-150 transition-all cursor-pointer"
-                  style={{ left: `${(c.timestamp_seconds / duration) * 100}%` }}
-                  title={c.title}
-                  onClick={(e) => { e.stopPropagation(); seekTo(c.timestamp_seconds) }}
-                />
-              ))}
+              {duration > 0 &&
+                sortedCitations.map((c, i) => (
+                  <div
+                    key={`marker-${i}`}
+                    className="absolute top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-yellow-400 opacity-80 hover:opacity-100 hover:scale-150 transition-all cursor-pointer"
+                    style={{
+                      left: `${(c.timestamp_seconds / duration) * 100}%`,
+                    }}
+                    title={c.title}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      seekTo(c.timestamp_seconds);
+                    }}
+                  />
+                ))}
             </div>
           </div>
-          <span className="text-xs text-text-muted min-w-[40px]">{formatTime(duration)}</span>
+          <span className="text-xs text-text-muted min-w-[40px]">
+            {formatTime(duration)}
+          </span>
         </div>
 
         {/* Citations toggle */}
@@ -243,15 +281,15 @@ export default function NowPlaying({ episode }) {
             onClick={() => setShowCitations(!showCitations)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 border cursor-pointer ${
               showCitations
-                ? 'bg-accent-primary text-white border-accent-primary'
-                : 'bg-[rgba(255,255,255,0.05)] text-text-secondary border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.1)]'
+                ? "bg-accent-primary text-white border-accent-primary"
+                : "bg-[rgba(255,255,255,0.05)] text-text-secondary border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.1)]"
             }`}
             title="Toggle citations"
           >
-            📚 {citations.length}
+            Sources {citations.length}
           </button>
         )}
       </div>
     </>
-  )
+  );
 }

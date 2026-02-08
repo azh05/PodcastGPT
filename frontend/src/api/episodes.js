@@ -1,7 +1,17 @@
-export async function fetchEpisodes(search = '', { signal } = {}) {
+export async function fetchEpisodes(search = '', { signal, category = '', tone = '', sortBy = 'created_at', sortOrder = 'desc' } = {}) {
   const params = new URLSearchParams({ search, limit: '100' })
+  if (category) params.set('category', category)
+  if (tone) params.set('tone', tone)
+  if (sortBy) params.set('sort_by', sortBy)
+  if (sortOrder) params.set('sort_order', sortOrder)
   const res = await fetch(`/api/episodes?${params}`, { signal })
   if (!res.ok) throw new Error(`Failed to fetch episodes: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchCategories({ signal } = {}) {
+  const res = await fetch('/api/episodes/categories', { signal })
+  if (!res.ok) throw new Error(`Failed to fetch categories: ${res.status}`)
   return res.json()
 }
 

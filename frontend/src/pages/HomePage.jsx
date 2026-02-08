@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import PodcastSection from "../components/PodcastSection";
+import FilterBar from "../components/FilterBar";
 import {
   fetchEpisodes,
   fetchEpisode,
@@ -11,7 +12,13 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
   const [episodes, setEpisodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hideFailed, setHideFailed] = useState(true);
+  const [filters, setFilters] = useState({
+    category: "",
+    tone: "",
+    sortBy: "created_at",
+    sortOrder: "desc",
+  });
+
   const [toasts, setToasts] = useState([]); // { id, topic }
   const prevEpisodesRef = useRef([]);
 
@@ -58,6 +65,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
       try {
         const data = await fetchEpisodes(searchQuery, {
           signal: controller.signal,
+          ...filters,
         });
         setEpisodes(data);
         prevEpisodesRef.current = data; // seed prev (don't toast on initial load)
@@ -74,7 +82,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [searchQuery, refreshKey]);
+  }, [searchQuery, refreshKey, filters]);
 
   // Poll for in-progress episodes every 5 seconds
   const prevHadInProgress = useRef(false);
@@ -89,7 +97,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
     // If episodes just finished, do one final refresh to get the completed state
     if (!hasInProgress && prevHadInProgress.current) {
       prevHadInProgress.current = false;
-      fetchEpisodes(searchQuery)
+      fetchEpisodes(searchQuery, filters)
         .then(setEpisodes)
         .catch(() => {});
       return;
@@ -100,7 +108,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
 
     const interval = setInterval(async () => {
       try {
-        const data = await fetchEpisodes(searchQuery);
+        const data = await fetchEpisodes(searchQuery, filters);
         checkForNewFailures(data);
         setEpisodes(data);
       } catch {
@@ -109,7 +117,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [episodes, searchQuery]);
+  }, [episodes, searchQuery, filters]);
 
   const audioSrc = (url) => (url.startsWith("http") ? url : `/api${url}`);
 
@@ -139,7 +147,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
     try {
       await regenerateEpisode(episode.id);
       // Refresh the list to show the episode back in pending state
-      const data = await fetchEpisodes(searchQuery);
+      const data = await fetchEpisodes(searchQuery, filters);
       setEpisodes(data);
     } catch (err) {
       console.error("Failed to regenerate:", err);
@@ -168,12 +176,13 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
   const podcasts = episodes
     .filter((ep) => {
       if (ep.status === "pending") return false;
-      if (ep.status === "failed") return !hideFailed;
+      if (ep.status === "failed") return false;
       return true;
     })
     .map((ep) => ({
       id: ep.id,
       title: ep.topic,
+      category: ep.category,
       status: ep.status,
       coverImageUrl: ep.cover_image_url,
       audioUrl: ep.audio_url,
@@ -183,25 +192,41 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
         ep.status === "failed" ? () => handleRegenerate(ep) : undefined,
     }));
 
+  const hasActiveFilters = filters.category || filters.tone;
+
   if (podcasts.length === 0) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[40vh] gap-6">
-        <p className="text-text-secondary text-lg">
-          {searchQuery
-            ? "No episodes match your search."
-            : "No episodes yet. Create your first podcast!"}
-        </p>
-        {!searchQuery && (
-          <Link
-            href="/create"
-            className="px-6 py-3 bg-gradient-to-r from-accent-primary to-[#ff8f5a] text-white font-bold rounded-full no-underline transition-all duration-300 shadow-[0_4px_15px_rgba(255,107,53,0.3)] hover:shadow-[0_6px_25px_rgba(255,107,53,0.5)] hover:-translate-y-0.5"
-          >
-            + Create Podcast
-          </Link>
-        )}
+      <div>
+        <FilterBar filters={filters} onFiltersChange={setFilters} />
+        <div className="flex flex-col justify-center items-center min-h-[40vh] gap-6">
+          <p className="text-text-secondary text-lg">
+            {searchQuery || hasActiveFilters
+              ? "No episodes match your filters."
+              : "No episodes yet. Create your first podcast!"}
+          </p>
+          {!searchQuery && !hasActiveFilters && (
+            <Link
+              href="/create"
+              className="px-6 py-3 bg-gradient-to-r from-accent-primary to-[#ff8f5a] text-white font-bold rounded-full no-underline transition-all duration-300 shadow-[0_4px_15px_rgba(255,107,53,0.3)] hover:shadow-[0_6px_25px_rgba(255,107,53,0.5)] hover:-translate-y-0.5"
+            >
+              + Create Podcast
+            </Link>
+          )}
+        </div>
       </div>
     );
   }
+
+  // Group podcasts by category for subsections
+  const categoryMap = {};
+  podcasts.forEach((p) => {
+    const cat = p.category || "other";
+    if (!categoryMap[cat]) categoryMap[cat] = [];
+    categoryMap[cat].push(p);
+  });
+  const categoryEntries = Object.entries(categoryMap).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
 
   return (
     <div>
@@ -257,23 +282,23 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
         ))}
       </div>
 
-      {failedCount > 0 && (
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setHideFailed(!hideFailed)}
-            className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 border cursor-pointer ${
-              hideFailed
-                ? "bg-[rgba(239,68,68,0.15)] text-red-400 border-[rgba(239,68,68,0.3)]"
-                : "bg-[rgba(255,255,255,0.05)] text-text-secondary border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.1)]"
-            }`}
-          >
-            {hideFailed
-              ? `Show failed (${failedCount})`
-              : `Hide failed (${failedCount})`}
-          </button>
-        </div>
-      )}
-      <PodcastSection title="Your Podcasts" podcasts={podcasts} />
+      <FilterBar filters={filters} onFiltersChange={setFilters} />
+
+      {/* Category subsections */}
+      {categoryEntries.map(([category, catPodcasts], i) => (
+        <PodcastSection
+          key={category}
+          title={category.charAt(0).toUpperCase() + category.slice(1)}
+          podcasts={catPodcasts}
+          delay={i * 0.05}
+        />
+      ))}
+
+      <PodcastSection
+        title="Your Podcasts"
+        podcasts={podcasts}
+        delay={categoryEntries.length * 0.05}
+      />
     </div>
   );
 }

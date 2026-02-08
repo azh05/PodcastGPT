@@ -101,6 +101,11 @@ export default function EpisodePage({ id, onPlay }) {
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${style.bg} ${style.text} rounded text-[0.7rem] font-bold`}>
             {style.label}
           </span>
+          {episode.category && (
+            <span className="inline-flex items-center px-2.5 py-1 bg-[rgba(255,107,53,0.1)] text-accent-primary rounded text-[0.7rem] font-bold capitalize">
+              {episode.category}
+            </span>
+          )}
           {episode.tone && (
             <span className="text-text-muted text-sm capitalize">{episode.tone}</span>
           )}

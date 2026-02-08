@@ -7,7 +7,7 @@ from app import db as database
 from app.audio_stitcher import stitch_audio
 from app.citations_client import resolve_citation
 from app.config import settings
-from app.gemini_client import generate_script, research_topic
+from app.gemini_client import categorize_topic, generate_script, research_topic
 from app.image_client import fetch_cover_image
 from app.storage import upload_audio
 from app.tts_client import synthesize_line
@@ -31,11 +31,12 @@ async def generate_episode(episode_id: ObjectId) -> None:
         topic = doc["topic"]
         tone = doc.get("tone", "conversational")
 
-        # Step 1: Research (+ fetch cover image in parallel)
+        # Step 1: Research (+ fetch cover image + categorize in parallel)
         await update_status(episode_id, "researching")
-        research, cover_image_url = await asyncio.gather(
+        research, cover_image_url, category = await asyncio.gather(
             research_topic(topic),
             fetch_cover_image(topic),
+            categorize_topic(topic),
         )
         await update_status(
             episode_id,
@@ -43,6 +44,7 @@ async def generate_episode(episode_id: ObjectId) -> None:
             {
                 "research_notes": research,
                 "cover_image_url": cover_image_url,
+                "category": category,
             },
         )
 

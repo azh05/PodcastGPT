@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     audio_dir: str = "static/audio"
     gcs_bucket_name: str = ""
     gcs_project_id: str = ""
+    google_cse_cx: str = ""
 
     model_config = {"env_file": ENV_FILE}
 

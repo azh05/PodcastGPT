@@ -13,6 +13,8 @@ async def connect_db() -> None:
     db = client[settings.mongodb_db_name]
     await client.admin.command("ping")
     print(f"Connected to MongoDB: {settings.mongodb_db_name}")
+    await db["episodes"].create_index("category")
+    await db["episodes"].create_index("tone")
 
 
 async def close_db() -> None:

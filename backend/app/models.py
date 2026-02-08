@@ -14,6 +14,22 @@ class EpisodeStatus(str, Enum):
     failed = "failed"
 
 
+class EpisodeCategory(str, Enum):
+    technology = "technology"
+    science = "science"
+    history = "history"
+    politics = "politics"
+    health = "health"
+    business = "business"
+    entertainment = "entertainment"
+    sports = "sports"
+    education = "education"
+    culture = "culture"
+    philosophy = "philosophy"
+    art = "art"
+    other = "other"
+
+
 class ToneStyle(str, Enum):
     conversational = "conversational"
     professional = "professional"
@@ -52,6 +68,7 @@ class EpisodeResponse(BaseModel):
     id: str
     topic: str
     tone: str
+    category: str | None = None
     status: EpisodeStatus
     created_at: datetime
     cover_image_url: str | None = None
@@ -67,6 +84,7 @@ class EpisodeListItem(BaseModel):
     id: str
     topic: str
     tone: str
+    category: str | None = None
     status: EpisodeStatus
     created_at: datetime
     cover_image_url: str | None = None
@@ -79,6 +97,7 @@ def doc_to_episode_response(doc: dict) -> EpisodeResponse:
         id=str(doc["_id"]),
         topic=doc["topic"],
         tone=doc.get("tone", "conversational"),
+        category=doc.get("category"),
         status=doc["status"],
         created_at=doc["created_at"],
         cover_image_url=doc.get("cover_image_url"),
@@ -96,6 +115,7 @@ def doc_to_episode_list_item(doc: dict) -> EpisodeListItem:
         id=str(doc["_id"]),
         topic=doc["topic"],
         tone=doc.get("tone", "conversational"),
+        category=doc.get("category"),
         status=doc["status"],
         created_at=doc["created_at"],
         cover_image_url=doc.get("cover_image_url"),

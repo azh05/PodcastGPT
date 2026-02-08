@@ -44,6 +44,7 @@ async def create_episode(req: GenerateRequest, background_tasks: BackgroundTasks
     doc = {
         "topic": req.topic,
         "tone": req.tone.value,
+        "category": None,
         "status": "pending",
         "created_at": datetime.now(timezone.utc),
         "cover_image_url": None,
@@ -60,6 +61,12 @@ async def create_episode(req: GenerateRequest, background_tasks: BackgroundTasks
 
     background_tasks.add_task(generate_episode, doc["_id"])
     return doc_to_episode_response(doc)
+
+
+@app.get("/episodes/categories")
+async def list_categories():
+    raw = await database.db["episodes"].distinct("category")
+    return sorted([c for c in raw if c])
 
 
 @app.get("/episodes/{episode_id}", response_model=EpisodeResponse)
@@ -90,6 +97,7 @@ async def regenerate_episode(episode_id: str, background_tasks: BackgroundTasks)
     # Reset the episode to pending and clear all generated data
     reset = {
         "status": "pending",
+        "category": None,
         "cover_image_url": None,
         "research_notes": None,
         "script": None,
@@ -111,12 +119,30 @@ async def list_episodes(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     search: str = Query(default=""),
+    category: str = Query(default=""),
+    tone: str = Query(default=""),
+    sort_by: str = Query(default="created_at"),
+    sort_order: str = Query(default="desc"),
 ):
     query = {}
     if search.strip():
         query["topic"] = {"$regex": search.strip(), "$options": "i"}
+    if category.strip():
+        query["category"] = category.strip()
+    if tone.strip():
+        query["tone"] = tone.strip()
+
+    # Build sort spec
+    allowed_sort_fields = {"created_at", "duration_seconds", "topic"}
+    sort_field = sort_by if sort_by in allowed_sort_fields else "created_at"
+    direction = 1 if sort_order == "asc" else -1
+
     cursor = (
-        database.db["episodes"].find(query).sort("created_at", -1).skip(offset).limit(limit)
+        database.db["episodes"]
+        .find(query)
+        .sort(sort_field, direction)
+        .skip(offset)
+        .limit(limit)
     )
     docs = await cursor.to_list(length=limit)
     return [doc_to_episode_list_item(doc) for doc in docs]

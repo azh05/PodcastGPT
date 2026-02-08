@@ -1,9 +1,12 @@
 import json
+import logging
 
 from google import genai
 from google.genai import types
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 _client: genai.Client | None = None
 
@@ -53,6 +56,43 @@ Return ONLY a JSON array of objects. Each object MUST have "speaker" and "text".
 Optionally include "citation_query" when a specific source is referenced.
 Example: [{"speaker": "host_a", "text": "Welcome back..."}, {"speaker": "host_a", "text": "In his diary, Columbus wrote...", "citation_query": "Christopher Columbus diary journal"}]
 """
+
+
+ALLOWED_CATEGORIES = {
+    "technology", "science", "history", "politics", "health",
+    "business", "entertainment", "sports", "education", "culture",
+    "philosophy", "art", "other",
+}
+
+CATEGORIZE_SYSTEM_PROMPT = (
+    "You are a topic classifier. Given a podcast topic, classify it into exactly one "
+    "of the following categories: technology, science, history, politics, health, "
+    "business, entertainment, sports, education, culture, philosophy, art, other.\n\n"
+    'Return a JSON object with a single key "category" and the chosen value.\n'
+    'Example: {"category": "technology"}'
+)
+
+
+async def categorize_topic(topic: str) -> str:
+    """Classify a topic into one of the predefined categories. Never raises."""
+    try:
+        response = await _get_client().aio.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=f"Classify this podcast topic: {topic}",
+            config=types.GenerateContentConfig(
+                system_instruction=CATEGORIZE_SYSTEM_PROMPT,
+                temperature=0.0,
+                response_mime_type="application/json",
+            ),
+        )
+        result = json.loads(response.text)
+        category = result.get("category", "other").lower().strip()
+        if category not in ALLOWED_CATEGORIES:
+            return "other"
+        return category
+    except Exception as exc:
+        logger.warning("categorize_topic failed for %r: %s", topic, exc)
+        return "other"
 
 
 async def research_topic(topic: str) -> str:

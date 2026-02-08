@@ -4,6 +4,7 @@ import httpx
 
 WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php"
 TIMEOUT = 10.0
+HEADERS = {"User-Agent": "PodcastGPT/1.0 (podcast cover image lookup)"}
 
 
 async def fetch_cover_image(topic: str) -> str | None:
@@ -13,13 +14,13 @@ async def fetch_cover_image(topic: str) -> str | None:
         "format": "json",
         "generator": "search",
         "gsrsearch": topic,
-        "gsrlimit": 3,
+        "gsrlimit": 5,
         "prop": "pageimages",
         "piprop": "thumbnail",
         "pithumbsize": 500,
     }
     try:
-        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+        async with httpx.AsyncClient(timeout=TIMEOUT, headers=HEADERS) as client:
             resp = await client.get(WIKIPEDIA_API, params=params)
             resp.raise_for_status()
             data = resp.json()

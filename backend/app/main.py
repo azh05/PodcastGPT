@@ -76,6 +76,36 @@ async def get_episode(episode_id: str):
     return doc_to_episode_response(doc)
 
 
+@app.post("/episodes/{episode_id}/regenerate", response_model=EpisodeResponse)
+async def regenerate_episode(episode_id: str, background_tasks: BackgroundTasks):
+    try:
+        oid = ObjectId(episode_id)
+    except (InvalidId, Exception):
+        raise HTTPException(status_code=400, detail="Invalid episode ID format")
+
+    doc = await database.db["episodes"].find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+    # Reset the episode to pending and clear all generated data
+    reset = {
+        "status": "pending",
+        "cover_image_url": None,
+        "research_notes": None,
+        "script": None,
+        "citations": None,
+        "audio_filename": None,
+        "audio_url": None,
+        "duration_seconds": None,
+        "error": None,
+    }
+    await database.db["episodes"].update_one({"_id": oid}, {"$set": reset})
+    doc.update(reset)
+
+    background_tasks.add_task(generate_episode, oid)
+    return doc_to_episode_response(doc)
+
+
 @app.get("/episodes", response_model=list[EpisodeListItem])
 async def list_episodes(
     limit: int = Query(default=20, ge=1, le=100),

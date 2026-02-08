@@ -23,3 +23,14 @@ export async function fetchEpisode(id, { signal } = {}) {
   if (!res.ok) throw new Error(`Failed to fetch episode: ${res.status}`)
   return res.json()
 }
+
+export async function regenerateEpisode(id) {
+  const res = await fetch(`/api/episodes/${id}/regenerate`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || `Failed to regenerate episode: ${res.status}`)
+  }
+  return res.json()
+}

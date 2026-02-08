@@ -110,6 +110,7 @@ export default function HomePage({ searchQuery, onPlay, refreshKey }) {
   const podcasts = episodes
     .filter((ep) => ep.status !== "failed" && ep.status !== "pending")
     .map((ep) => ({
+      id: ep.id,
       title: ep.topic,
       status: ep.status,
       coverImageUrl: ep.cover_image_url,

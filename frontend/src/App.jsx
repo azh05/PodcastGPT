@@ -3,6 +3,7 @@ import { Switch, Route } from 'wouter'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import CreatePage from './pages/CreatePage'
+import EpisodePage from './pages/EpisodePage'
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,6 +26,9 @@ export default function App() {
         </Route>
         <Route path="/create">
           <CreatePage onEpisodeCreated={handleEpisodeCreated} />
+        </Route>
+        <Route path="/episode/:id">
+          {(params) => <EpisodePage id={params.id} onPlay={setNowPlaying} />}
         </Route>
       </Switch>
     </Layout>

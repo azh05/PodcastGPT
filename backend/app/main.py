@@ -43,6 +43,7 @@ async def create_episode(req: GenerateRequest, background_tasks: BackgroundTasks
         "created_at": datetime.now(timezone.utc),
         "research_notes": None,
         "script": None,
+        "citations": None,
         "audio_filename": None,
         "audio_url": None,
         "duration_seconds": None,

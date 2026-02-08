@@ -7,6 +7,7 @@ from app import db as database
 from app.gemini_client import research_topic, generate_script
 from app.tts_client import synthesize_line
 from app.audio_stitcher import stitch_audio
+from app.citations_client import resolve_citation
 
 
 async def update_status(episode_id: ObjectId, status: str, extra: dict | None = None) -> None:
@@ -47,14 +48,47 @@ async def generate_episode(episode_id: ObjectId) -> None:
         # Step 4: Stitch audio
         await update_status(episode_id, "stitching")
         filename = str(episode_id)
-        file_path, duration = await asyncio.to_thread(stitch_audio, segments, filename)
+        file_path, duration, timestamps = await asyncio.to_thread(stitch_audio, segments, filename)
         audio_url = f"/static/audio/{filename}.mp3"
 
-        # Step 5: Mark completed
+        # Step 5: Resolve citations
+        citation_indices = []  # track which script line each task corresponds to
+        for i, line in enumerate(script):
+            if line.get("citation_query"):
+                citation_indices.append(i)
+
+        citations = []
+        if citation_indices:
+            # Resolve sequentially with a small delay to avoid 429 rate limits
+            results = []
+            for idx in citation_indices:
+                result = await resolve_citation(script[idx]["citation_query"])
+                results.append(result)
+                await asyncio.sleep(0.5)  # throttle requests
+            ts_map = {t["index"]: t["start_seconds"] for t in timestamps}
+            for idx, result in zip(citation_indices, results):
+                if result is None:
+                    continue
+                line = script[idx]
+                citations.append({
+                    "timestamp_seconds": ts_map.get(idx, 0.0),
+                    "speaker": line["speaker"],
+                    "text_snippet": line["text"][:120],
+                    "query": line["citation_query"],
+                    "title": result["title"],
+                    "authors": result.get("authors", []),
+                    "published_date": result.get("published_date"),
+                    "thumbnail_url": result.get("thumbnail_url"),
+                    "source_url": result.get("source_url"),
+                    "source_name": result.get("source_name", "Google Books"),
+                })
+
+        # Step 6: Mark completed
         await update_status(episode_id, "completed", {
             "audio_filename": f"{filename}.mp3",
             "audio_url": audio_url,
             "duration_seconds": duration,
+            "citations": citations if citations else None,
         })
 
     except Exception as exc:

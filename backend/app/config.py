@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
+
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 class Settings(BaseSettings):
@@ -10,7 +14,7 @@ class Settings(BaseSettings):
     mongodb_db_name: str = "podcastgpt"
     audio_dir: str = "static/audio"
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ENV_FILE}
 
 
 settings = Settings()

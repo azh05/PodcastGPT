@@ -31,6 +31,21 @@ class GenerateRequest(BaseModel):
 class DialogueLine(BaseModel):
     speaker: str
     text: str
+    citation_query: str | None = None
+
+
+class Citation(BaseModel):
+    """A resolved citation tied to a specific moment in the podcast audio."""
+    timestamp_seconds: float
+    speaker: str
+    text_snippet: str
+    query: str
+    title: str
+    authors: list[str] = []
+    published_date: str | None = None
+    thumbnail_url: str | None = None
+    source_url: str | None = None
+    source_name: str = "Open Library"
 
 
 class EpisodeResponse(BaseModel):
@@ -41,6 +56,7 @@ class EpisodeResponse(BaseModel):
     created_at: datetime
     research_notes: str | None = None
     script: list[DialogueLine] | None = None
+    citations: list[Citation] | None = None
     audio_url: str | None = None
     duration_seconds: float | None = None
     error: str | None = None
@@ -65,6 +81,7 @@ def doc_to_episode_response(doc: dict) -> EpisodeResponse:
         created_at=doc["created_at"],
         research_notes=doc.get("research_notes"),
         script=[DialogueLine(**line) for line in doc["script"]] if doc.get("script") else None,
+        citations=[Citation(**c) for c in doc["citations"]] if doc.get("citations") else None,
         audio_url=doc.get("audio_url"),
         duration_seconds=doc.get("duration_seconds"),
         error=doc.get("error"),

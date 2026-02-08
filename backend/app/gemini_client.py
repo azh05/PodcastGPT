@@ -41,8 +41,17 @@ Rules:
 - HOST_A explains and storytells; HOST_B asks follow-ups and makes relatable comparisons.
 - Start with a hook, build through the middle, end with a memorable takeaway.
 
-Return ONLY a JSON array of objects with "speaker" and "text" fields.
-Example: [{"speaker": "host_a", "text": "Welcome back..."}, {"speaker": "host_b", "text": "So today..."}]
+CITATIONS (important):
+When the dialogue mentions a specific document, book, letter, speech, painting,
+artwork, scientific paper, or primary source, add a "citation_query" field to that
+JSON object with a concise, search-friendly query string that could be used to find
+that source (e.g. "Van Gogh letters to Theo", "Origin of Species Charles Darwin").
+Only include citation_query when referencing a real, specific, verifiable source.
+Do NOT add citation_query for general statements or opinions.
+
+Return ONLY a JSON array of objects. Each object MUST have "speaker" and "text".
+Optionally include "citation_query" when a specific source is referenced.
+Example: [{"speaker": "host_a", "text": "Welcome back..."}, {"speaker": "host_a", "text": "In his diary, Columbus wrote...", "citation_query": "Christopher Columbus diary journal"}]
 """
 
 
